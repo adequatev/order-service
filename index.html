@@ -17,11 +17,6 @@
         <button onclick="getOrder()">Get Order</button>
     </div>
 
-    <div>
-        <h3>Save Test Order:</h3>
-        <button onclick="saveTestOrder()">Save Test Order</button>
-    </div>
-
     <div id="result"></div>
 
     <script>
@@ -34,39 +29,6 @@
                 const data = await response.json();
                 document.getElementById('result').innerHTML = 
                     `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-            } catch (error) {
-                document.getElementById('result').innerHTML = 
-                    `<div style="color: red;">Error: ${error.message}</div>`;
-            }
-        }
-
-        async function saveTestOrder() {
-            const testOrder = {
-                "order_uid": "test123",
-                "track_number": "WBILMTESTTRACK",
-                "entry": "WBIL",
-                "delivery": {
-                    "name": "Test Testov",
-                    "phone": "+9720000000",
-                    "zip": "2639809",
-                    "city": "Kiryat Mozkin",
-                    "address": "Ploshad Mira 15",
-                    "region": "Kraiot",
-                    "email": "test@gmail.com"
-                }
-            };
-
-            try {
-                await fetch('/save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        order_uid: testOrder.order_uid,
-                        data: testOrder
-                    })
-                });
-                document.getElementById('result').innerHTML = 
-                    '<div style="color: green;">Test order saved!</div>';
             } catch (error) {
                 document.getElementById('result').innerHTML = 
                     `<div style="color: red;">Error: ${error.message}</div>`;
