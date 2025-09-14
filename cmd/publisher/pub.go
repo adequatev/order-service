@@ -9,6 +9,23 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 )
 
+type Order struct {
+	OrderUID        string    `json:"order_uid"`
+	TrackNumber     string    `json:"track_number"`
+	Entry           string    `json:"entry"`
+	Delivery        Delivery  `json:"delivery"`
+	Payment         Payment   `json:"payment"`
+	Items           []Item    `json:"items"`
+	Locale          string    `json:"locale"`
+	InternalSig     string    `json:"internal_signature"`
+	CustomerID      string    `json:"customer_id"`
+	DeliveryService string    `json:"delivery_service"`
+	ShardKey        int16     `json:"shardkey,string"`
+	SmID            int       `json:"sm_id"`
+	DateCreated     time.Time `json:"date_created"`
+	OofShard        int16     `json:"oof_shard,string"`
+}
+
 type Delivery struct {
 	Name    string `json:"name"`
 	Phone   string `json:"phone"`
@@ -20,47 +37,30 @@ type Delivery struct {
 }
 
 type Payment struct {
-	Transaction   string `json:"transaction"`
-	RequestID     string `json:"request_id"`
-	Currency      string `json:"currency"`
-	Provider      string `json:"provider"`
-	Amount        int    `json:"amount"`
-	PaymentDT     int64  `json:"payment_dt"`
-	Bank          string `json:"bank"`
-	DeliveryCost  int    `json:"delivery_cost"`
-	GoodsTotal    int    `json:"goods_total"`
-	CustomFee     int    `json:"custom_fee"`
+	Transaction  string `json:"transaction"`
+	RequestID    string `json:"request_id"`
+	Currency     string `json:"currency"`
+	Provider     string `json:"provider"`
+	Amount       int    `json:"amount"`
+	PaymentDT    int64  `json:"payment_dt"`
+	Bank         string `json:"bank"`
+	DeliveryCost int    `json:"delivery_cost"`
+	GoodsTotal   int    `json:"goods_total"`
+	CustomFee    int    `json:"custom_fee"`
 }
 
 type Item struct {
-	ChrtID      int    `json:"chrt_id"`
+	ChrtID      int64  `json:"chrt_id"`
 	TrackNumber string `json:"track_number"`
 	Price       int    `json:"price"`
-	RID         string `json:"rid"`
+	Rid         string `json:"rid"`
 	Name        string `json:"name"`
 	Sale        int    `json:"sale"`
 	Size        string `json:"size"`
 	TotalPrice  int    `json:"total_price"`
-	NmID        int    `json:"nm_id"`
+	NmID        int64  `json:"nm_id"`
 	Brand       string `json:"brand"`
 	Status      int    `json:"status"`
-}
-
-type Order struct {
-	OrderUID         string    `json:"order_uid"`
-	TrackNumber      string    `json:"track_number"`
-	Entry            string    `json:"entry"`
-	Delivery         Delivery  `json:"delivery"`
-	Payment          Payment   `json:"payment"`
-	Items            []Item    `json:"items"`
-	Locale           string    `json:"locale"`
-	InternalSign     string    `json:"internal_signature"`
-	CustomerID       string    `json:"customer_id"`
-	DeliveryService  string    `json:"delivery_service"`
-	ShardKey         string    `json:"shardkey"`
-	SmID             int       `json:"sm_id"`
-	DateCreated      time.Time `json:"date_created"`
-	OofShard         string    `json:"oof_shard"`
 }
 
 func main() {
@@ -136,26 +136,38 @@ func generateFakeOrder() Order {
 		},
 		Items: []Item{
 			{
-				ChrtID:      gofakeit.Number(1000000, 9999999),
+				ChrtID:      gofakeit.Int64(),
 				TrackNumber: track,
 				Price:       goodsTotal,
-				RID:         gofakeit.UUID(),
+				Rid:         gofakeit.UUID(),
 				Name:        gofakeit.ProductName(),
 				Sale:        gofakeit.Number(0, 50),
 				Size:        gofakeit.RandomString([]string{"S", "M", "L", "XL"}),
 				TotalPrice:  goodsTotal,
-				NmID:        gofakeit.Number(100000, 999999),
+				NmID:        gofakeit.Int64(),
+				Brand:       gofakeit.Company(),
+				Status:      gofakeit.Number(100, 300),
+			},
+			{
+				ChrtID:      gofakeit.Int64(),
+				TrackNumber: track,
+				Price:       goodsTotal,
+				Rid:         gofakeit.UUID(),
+				Name:        gofakeit.ProductName(),
+				Sale:        gofakeit.Number(0, 50),
+				Size:        gofakeit.RandomString([]string{"S", "M", "L", "XL"}),
+				TotalPrice:  goodsTotal,
+				NmID:        gofakeit.Int64(),
 				Brand:       gofakeit.Company(),
 				Status:      gofakeit.Number(100, 300),
 			},
 		},
 		Locale:          "en",
-		InternalSign:    "",
 		CustomerID:      gofakeit.Username(),
 		DeliveryService: gofakeit.RandomString([]string{"meest", "dhl", "ups"}),
-		ShardKey:        gofakeit.DigitN(1),
+		ShardKey:        gofakeit.Int16(),
 		SmID:            gofakeit.Number(10, 999),
 		DateCreated:     time.Now().UTC(),
-		OofShard:        gofakeit.DigitN(1),
+		OofShard:        gofakeit.Int16(),
 	}
 }
