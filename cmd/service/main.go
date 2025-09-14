@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/golang-migrate/migrate"
 	_ "github.com/lib/pq"
 )
 
