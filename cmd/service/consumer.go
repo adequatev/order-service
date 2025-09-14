@@ -146,8 +146,7 @@ func (a *App) processKafkaMessage(msg []byte) {
 			order_uid, track_number, entry, locale, internal_signature,
 			customer_id, delivery_service, shardkey, sm_id, date_created, oof_shard
 		) VALUES (
-			@order_uid, @track_number, @entry, @locale, @internal_signature,
-			@customer_id, @delivery_service, @shardkey, @sm_id, @date_created, @oof_shard
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 		)
 		ON CONFLICT (order_uid) DO UPDATE
 		SET track_number = EXCLUDED.track_number,
@@ -178,7 +177,7 @@ func (a *App) processKafkaMessage(msg []byte) {
 	}
 
 	// --- Delivery ---
-	_, err = tx.Exec(`DELETE FROM deliveries WHERE order_uid=@order_uid`,
+	_, err = tx.Exec(`DELETE FROM deliveries WHERE order_uid=$1`,
 		sql.Named("order_uid", orderID))
 	if err != nil {
 		log.Println("failed to delete old delivery:", err)
@@ -186,7 +185,7 @@ func (a *App) processKafkaMessage(msg []byte) {
 	}
 	_, err = tx.Exec(`
 		INSERT INTO deliveries (id, order_uid, name, phone, zip, city, address, region, email)
-		VALUES (@id, @order_uid, @name, @phone, @zip, @city, @address, @region, @email)`,
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 		sql.Named("id", uuid.New()),
 		sql.Named("order_uid", orderID),
 		sql.Named("name", order.Delivery.Name),
@@ -203,7 +202,7 @@ func (a *App) processKafkaMessage(msg []byte) {
 	}
 
 	// --- Payment ---
-	_, err = tx.Exec(`DELETE FROM payments WHERE order_uid=@order_uid`,
+	_, err = tx.Exec(`DELETE FROM payments WHERE order_uid=$1`,
 		sql.Named("order_uid", orderID))
 	if err != nil {
 		log.Println("failed to delete old payment:", err)
@@ -215,8 +214,7 @@ func (a *App) processKafkaMessage(msg []byte) {
 			id, order_uid, transaction, request_id, currency, provider,
 			amount, payment_dt, bank, delivery_cost, goods_total, custom_fee
 		) VALUES (
-			@id, @order_uid, @transaction, @request_id, @currency, @provider,
-			@amount, @payment_dt, @bank, @delivery_cost, @goods_total, @custom_fee
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
 		)`,
 		sql.Named("id", uuid.New()),
 		sql.Named("order_uid", orderID),
@@ -237,7 +235,7 @@ func (a *App) processKafkaMessage(msg []byte) {
 	}
 
 	// --- Items ---
-	_, err = tx.Exec(`DELETE FROM items WHERE order_uid=@order_uid`,
+	_, err = tx.Exec(`DELETE FROM items WHERE order_uid=$1`,
 		sql.Named("order_uid", orderID))
 	if err != nil {
 		log.Println("failed to delete old items:", err)
@@ -254,8 +252,7 @@ func (a *App) processKafkaMessage(msg []byte) {
 				id, order_uid, chrt_id, track_number, price, rid,
 				name, sale, size, total_price, nm_id, brand, status
 			) VALUES (
-				@id, @order_uid, @chrt_id, @track_number, @price, @rid,
-				@name, @sale, @size, @total_price, @nm_id, @brand, @status
+				$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 			)`,
 			sql.Named("id", uuid.New()),
 			sql.Named("order_uid", orderID),

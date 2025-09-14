@@ -72,24 +72,13 @@ func (a *App) getOrderHandler(w http.ResponseWriter, r *http.Request) {
 
 	// update cache
 	a.Cache.Put(orderID, raw)
-	saveCacheToDb(a, orderID)
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(raw)
 }
 
-func saveCacheToDb(a *App, orderUID string) {
-    _, err := a.DB.Exec(`
-        INSERT INTO cache_orders (order_uid)
-        VALUES ($1)
-        ON CONFLICT (order_uid) DO NOTHING`, orderUID)
-    if err != nil {
-        log.Println("Error saving cache UID:", err)
-    }
-}
-
 func (a *App) warmupCache() error {
-	rows, err := a.DB.Query(`SELECT order_uid, 
+	rows, err := a.DB.Query(`SELECT o.order_uid, 
         json_build_object(
             'order_uid', o.order_uid,
             'track_number', o.track_number,
@@ -108,12 +97,13 @@ func (a *App) warmupCache() error {
         ) AS data
         FROM orders o
         LEFT JOIN deliveries d ON d.order_uid=o.order_uid
-        LEFT JOIN payments p ON p.order_uid=o.order_uid`)
+        LEFT JOIN payments p ON p.order_uid=o.order_uid
+		LIMIT $1`, a.Cache.capacity)
 	if err != nil {
 		return fmt.Errorf("warmup query failed: %w", err)
 	}
 	defer rows.Close()
-
+	
 	count := 0
 	for rows.Next() {
 		var orderUID string
