@@ -139,8 +139,7 @@ func (a *App) processKafkaMessage(msg []byte) {
 		return
 	}
 	defer tx.Rollback()
-
-	// --- Orders ---
+	
 	_, err = tx.Exec(`
 		INSERT INTO orders (
 			order_uid, track_number, entry, locale, internal_signature,

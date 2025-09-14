@@ -1,39 +1,130 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Order Service</title>
-    <style>
-        body { font-family: Arial; margin: 40px; }
-        input, button { padding: 10px; margin: 5px; }
-        pre { background: #f4f4f4; padding: 10px; }
-    </style>
+<meta charset="UTF-8">
+<title>Order Service</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f9f9f9; color: #333; }
+    input, button { padding: 10px; margin: 5px 0; font-size: 16px; }
+    button { cursor: pointer; }
+    .section { background: #fff; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
+    h2 { margin-top: 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
+    th { background: #fff; }
+</style>
 </head>
 <body>
-    <h1>Order Service</h1>
-    
-    <div>
-        <h3>Get Order:</h3>
-        <input type="text" id="orderId" placeholder="Enter Order ID">
-        <button onclick="getOrder()">Get Order</button>
-    </div>
+<h1>Order Service</h1>
 
-    <div id="result"></div>
+<div class="section">
+    <h2>Get Order</h2>
+    <input type="text" id="orderId" placeholder="Enter Order ID">
+    <button onclick="getOrder()">Get Order</button>
+</div>
 
-    <script>
-        async function getOrder() {
-            const orderId = document.getElementById('orderId').value;
-            if (!orderId) return alert('Enter Order ID');
+<div id="result"></div>
 
-            try {
-                const response = await fetch('/order/' + orderId);
-                const data = await response.json();
-                document.getElementById('result').innerHTML = 
-                    `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-            } catch (error) {
-                document.getElementById('result').innerHTML = 
-                    `<div style="color: red;">Error: ${error.message}</div>`;
+<script>
+function createTable(data) {
+    const table = document.createElement('table');
+    for (const key in data) {
+        const value = data[key];
+        const row = document.createElement('tr');
+        const cellKey = document.createElement('th');
+        const cellValue = document.createElement('td');
+
+        cellKey.textContent = key;
+
+        if (typeof value === 'object' && value !== null) {
+            if (Array.isArray(value)) {
+                cellValue.appendChild(document.createTextNode(''));
+                value.forEach(item => {
+                    cellValue.appendChild(createTable(item));
+                });
+            } else {
+                cellValue.appendChild(createTable(value));
             }
+        } else {
+            cellValue.textContent = value;
         }
-    </script>
+
+        row.appendChild(cellKey);
+        row.appendChild(cellValue);
+        table.appendChild(row);
+    }
+    return table;
+}
+
+async function getOrder() {
+    const orderId = document.getElementById('orderId').value;
+    if (!orderId) return alert('Enter Order ID');
+
+    try {
+        const response = await fetch('/order/' + orderId);
+        if (!response.ok) throw new Error('Order not found');
+        const data = await response.json();
+
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = '';
+        
+        const sections = ['Order Info', 'Delivery', 'Payment', 'Items'];
+        
+        // Order Info
+        const orderInfo = {
+            order_uid: data.order_uid,
+            track_number: data.track_number,
+            entry: data.entry,
+            locale: data.locale,
+            internal_signature: data.internal_signature,
+            customer_id: data.customer_id,
+            delivery_service: data.delivery_service,
+            shardkey: data.shardkey,
+            sm_id: data.sm_id,
+            date_created: data.date_created,
+            oof_shard: data.oof_shard
+        };
+        const orderSection = document.createElement('div');
+        orderSection.className = 'section';
+        orderSection.innerHTML = `<h2>${sections[0]}</h2>`;
+        orderSection.appendChild(createTable(orderInfo));
+        resultDiv.appendChild(orderSection);
+
+        // Delivery
+        if (data.delivery) {
+            const deliverySection = document.createElement('div');
+            deliverySection.className = 'section';
+            deliverySection.innerHTML = `<h2>${sections[1]}</h2>`;
+            deliverySection.appendChild(createTable(data.delivery));
+            resultDiv.appendChild(deliverySection);
+        }
+
+        // Payment
+        if (data.payment) {
+            const paymentSection = document.createElement('div');
+            paymentSection.className = 'section';
+            paymentSection.innerHTML = `<h2>${sections[2]}</h2>`;
+            paymentSection.appendChild(createTable(data.payment));
+            resultDiv.appendChild(paymentSection);
+        }
+
+        // Items
+        if (data.items && data.items.length > 0) {
+            const itemsSection = document.createElement('div');
+            itemsSection.className = 'section';
+            itemsSection.innerHTML = `<h2>${sections[3]}</h2>`;
+            data.items.forEach(item => {
+                itemsSection.appendChild(createTable(item));
+            });
+            resultDiv.appendChild(itemsSection);
+        }
+
+    } catch (error) {
+        document.getElementById('result').innerHTML = 
+            `<div style="color: red;">Error: ${error.message}</div>`;
+    }
+}
+</script>
+
 </body>
 </html>

@@ -18,8 +18,8 @@ import (
 )
 
 type App struct {
-	DB       *sql.DB
-	Cache    *LRUCache
+	DB   	*sql.DB
+	Cache	*LRUCache
 	KafkaBrokers []string
 }
 
@@ -29,15 +29,13 @@ func (a *App) getOrderHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "missing order id", http.StatusBadRequest)
 		return
 	}
-
-	// check cache
+	
 	if val, ok := a.Cache.Get(orderID); ok {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(val)
 		return
 	}
 
-	// one-shot DB query
 	var raw json.RawMessage
 	err := a.DB.QueryRow(`SELECT 
         json_build_object(
@@ -70,7 +68,6 @@ func (a *App) getOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// update cache
 	a.Cache.Put(orderID, raw)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -78,6 +75,7 @@ func (a *App) getOrderHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) warmupCache() error {
+	
 	rows, err := a.DB.Query(`SELECT o.order_uid, 
         json_build_object(
             'order_uid', o.order_uid,
@@ -99,8 +97,9 @@ func (a *App) warmupCache() error {
         LEFT JOIN deliveries d ON d.order_uid=o.order_uid
         LEFT JOIN payments p ON p.order_uid=o.order_uid
 		LIMIT $1`, a.Cache.capacity)
+		
 	if err != nil {
-		return fmt.Errorf("warmup query failed: %w", err)
+		return fmt.Errorf("Warmup query failed: %w", err)
 	}
 	defer rows.Close()
 	
@@ -119,7 +118,6 @@ func (a *App) warmupCache() error {
 }
 
 func main() {
-	// подключение к Postgres
 	connStr := "postgres://someuser:some_password@localhost:5432/orders?sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -153,7 +151,6 @@ func main() {
 		log.Printf("Cache warmup failed: %v", err)
 	}
 	
-	// HTTP сервер
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /order/{id}", app.getOrderHandler)
 	mux.Handle("/", http.FileServer(http.Dir("./static")))
@@ -163,16 +160,12 @@ func main() {
 		Handler: handler,
 	}
 
-	// graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-
-	// запускаем Kafka consumer
 	go app.startKafkaConsumer(ctx)
 
-	// запускаем HTTP сервер
 	go func() {
-		log.Println("Server starting on :8080")
+		log.Println("Server starting on ", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("ListenAndServe error: %v", err)
 		}
@@ -180,7 +173,7 @@ func main() {
 
 	<-ctx.Done()
 	stop()
-	log.Println("Shutting down...")
+	log.Println("Shutting down")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
