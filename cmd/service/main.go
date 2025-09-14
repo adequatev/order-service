@@ -156,7 +156,7 @@ func main() {
 	// HTTP сервер
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /order/{id}", app.getOrderHandler)
-	mux.Handle("/", http.FileServer(http.Dir(".")))
+	mux.Handle("/", http.FileServer(http.Dir("./static")))
 	handler := loggingMiddleware(mux)
 	srv := &http.Server{
 		Addr:    ":8080",
